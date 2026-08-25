@@ -1,0 +1,33 @@
+name: "losslint"
+description: >-
+  Lint your training logs after the run: NaN, divergence, loss spikes,
+  overfitting onset and step bugs in trainer_state.json / CSV / JSONL /
+  TensorBoard event files, with CI-friendly exit codes.
+branding:
+  icon: "activity"
+  color: "purple"
+
+inputs:
+  files:
+    description: "Log files or directories to lint (directories are scanned recursively)"
+    required: true
+    default: "runs/"
+  fail-severity:
+    description: "Exit 1 when a finding is at or above this severity (error/warning/info)"
+    required: false
+    default: "error"
+  install-source:
+    description: "How to install losslint: a pip requirement spec (e.g. 'losslint' or a git+https URL)"
+    required: false
+    default: "losslint"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install losslint
+      shell: bash
+      run: pip install "${{ inputs.install-source }}"
+    - name: Lint training logs
+      shell: bash
+      run: |
+        losslint check "${{ inputs.files }}" --fail-severity "${{ inputs.fail-severity }}"

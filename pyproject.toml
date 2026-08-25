@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "losslint"
+version = "0.4.0"
+description = "Lint your training logs after the run: NaN, divergence, loss spikes, overfitting onset and step bugs in trainer_state.json / CSV / JSONL / TensorBoard event files, with CI-friendly exit codes."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "losslint contributors" }]
+requires-python = ">=3.10"
+dependencies = []
+keywords = [
+    "machine-learning",
+    "training",
+    "loss-curve",
+    "linter",
+    "nan",
+    "divergence",
+    "debugging",
+    "huggingface",
+    "tensorboard",
+    "ci",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.optional-dependencies]
+tb = ["tensorboard>=2.0"]
+fast = ["numpy>=1.24"]
+dev = ["ruff>=0.6", "tensorboard>=2.0", "numpy>=1.24", "pytest>=8"]
+
+[project.scripts]
+losslint = "losslint.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Lsyyh/losslint"
+Issues = "https://github.com/Lsyyh/losslint/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]

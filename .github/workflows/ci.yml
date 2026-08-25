@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: pip install -e ".[tb]"
+      - name: Demo logs generate and lint
+        shell: bash
+        run: |
+          losslint demo demo_logs
+          losslint check demo_logs/healthy.csv
+          losslint check demo_logs/nan.jsonl || code=$?
+          test "${code:-0}" -eq 1
+          # the event demo carries the planted NaN on purpose: tfevent parsing
+          # feeds the same checks, so the verdict must be exit 1, not clean
+          losslint check demo_logs/events.out.tfevents.1700000000.losslint-demo || code=$?
+          test "${code:-0}" -eq 1
+      - name: Watch mode smoke (incremental tail, snapshot on new finding)
+        shell: bash
+        run: |
+          head -n 30 demo_logs/nan.jsonl > live.jsonl
+          losslint watch live.jsonl --once --interval 0
+          tail -n 10 demo_logs/nan.jsonl >> live.jsonl
+          losslint watch live.jsonl --once --interval 0 --snapshot-dir snapshots || code=$?
+          test "${code:-0}" -eq 1
+          ls snapshots/*_nan_inf.json
+          python -c "import json, glob; d = json.load(open(glob.glob('snapshots/*_nan_inf.json')[0])); assert d['finding']['check'] == 'nan_inf' and d['series_tail'] and d['system']['hostname']"
+
+  smoke-fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install with the numpy fast path
+        run: pip install -e ".[tb,fast]"
+      - name: Numpy acceleration is active and findings unchanged
+        shell: bash
+        run: |
+          python -c "from losslint.accel import numpy_available; assert numpy_available()"
+          losslint demo demo_logs
+          losslint check demo_logs || code=$?
+          test "${code:-0}" -eq 1
