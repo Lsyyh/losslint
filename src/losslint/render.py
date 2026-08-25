@@ -22,7 +22,11 @@ SPARK_BINS = 24
 LABEL_WIDTH_MAX = 12
 LABEL_WIDTH_MIN = 5
 BLOCK_RAMPS = "▁▂▃▄▅▆▇█"
-ASCII_RAMPS = "_.-:=+*#%@"
+# ASCII fallback ramp. Every glyph here either rests on the text baseline or
+# floats *above* it (never dips below, unlike ``_``): the lower envelope of the
+# curve therefore stays flat instead of ragged. Order is by increasing ink
+# height so the ramp still reads as a rising curve.
+ASCII_RAMPS = ".:-=+*#%@"
 
 
 class _Palette:

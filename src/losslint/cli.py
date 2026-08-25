@@ -55,9 +55,29 @@ def _under_hidden_dir(root: Path, candidate: Path) -> bool:
 
 
 def _stdout_supports_unicode() -> bool:
-    """True when stdout can render block characters (UTF-8/UTF-16 consoles)."""
+    """True when stdout can render block characters with a flat lower edge.
+
+    The sparkline falls back to an ASCII ramp only when blocks cannot be
+    printed, but that ramp has mismatched glyph baselines (``_`` dips below the
+    line, ``.``/``:`` float above it) so its lower edge looks ragged. On Windows
+    the legacy console often reports a non-UTF-8 encoding (e.g. cp936) even
+    though it can display blocks once switched to the UTF-8 code page, so we
+    reconfigure the stream here and keep the clean block rendering.
+    """
     encoding = (sys.stdout.encoding or "").lower()
-    return "utf" in encoding
+    if "utf" in encoding:
+        return True
+    if sys.platform == "win32" and sys.stdout.isatty():
+        try:
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+            if kernel32.SetConsoleOutputCP(65001):
+                sys.stdout.reconfigure(encoding="utf-8")
+                return True
+        except (AttributeError, ValueError, OSError, LookupError):
+            pass
+    return False
 
 
 def _color_enabled(mode: str) -> bool:

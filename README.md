@@ -13,7 +13,7 @@ cloud, CPU-only.
 
 ```
 $ losslint check examples/demo_logs/nan.jsonl
-losslint 0.4.0 · 1 run(s) · 1 finding(s)
+losslint 0.4.1 · 1 run(s) · 1 finding(s)
 
 nan.jsonl · 40 points · 1 error
   loss   │█▇▇▆▆▅▅▄▄▄▃▃▃▃▂▂▂▂!▂▁▁▁▁│       1.8 →    0.243
@@ -25,9 +25,13 @@ nan.jsonl · 40 points · 1 error
 Every series row renders into the same fixed-width grid — label, a framed
 24-cell sparkline, right-aligned first → last values — so train and eval
 curves line up however sparsely eval is logged. The `!` above is the NaN
-break, visible before you read a single finding. Colors are enabled on TTYs
-only (`--color auto|always|never`, honors `NO_COLOR`); non-UTF-8 streams get
-an ASCII sparkline instead of blocks.
+break, visible before you read a single finding. The sparkline uses bottom-aligned
+Unicode block characters, so the lower edge of every curve is a flat, aligned
+baseline; on Windows the console is switched to the UTF-8 code page automatically
+so blocks render there too. Colors are enabled on TTYs only
+(`--color auto|always|never`, honors `NO_COLOR`); the few non-UTF-8 streams
+that cannot be reconfigured fall back to an ASCII sparkline whose lower edge
+still stays flat.
 
 ## Why
 

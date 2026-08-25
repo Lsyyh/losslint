@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "losslint"
-version = "0.4.0"
+version = "0.4.1"
 description = "Lint your training logs after the run: NaN, divergence, loss spikes, overfitting onset and step bugs in trainer_state.json / CSV / JSONL / TensorBoard event files, with CI-friendly exit codes."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "losslint contributors" }]
 requires-python = ">=3.10"
 dependencies = []
@@ -26,7 +27,6 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -48,6 +48,9 @@ losslint = "losslint.cli:main"
 [project.urls]
 Homepage = "https://github.com/Lsyyh/losslint"
 Issues = "https://github.com/Lsyyh/losslint/issues"
+Changelog = "https://github.com/Lsyyh/losslint/releases"
+Repository = "https://github.com/Lsyyh/losslint"
+Documentation = "https://github.com/Lsyyh/losslint#readme"
 
 [tool.setuptools.packages.find]
 where = ["src"]
