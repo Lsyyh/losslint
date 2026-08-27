@@ -1,0 +1,22 @@
+name: Training-log feedback
+description: Share a false positive, missed failure, or format request.
+labels: [feedback]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Feedback type
+      options:
+        - False positive
+        - Missed failure
+        - New log format
+        - Rule idea
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Share a sanitized minimal fixture and your manual assessment.
+    validations:
+      required: true

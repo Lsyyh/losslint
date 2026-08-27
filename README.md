@@ -54,19 +54,38 @@ The `!` marks a NaN/Inf break before you read a single finding.
 
 Exit codes: `0` clean, `1` findings at/above `--fail-severity`, `2` usage/parse error.
 
+## Automation-friendly reports
+
+`--format json` emits a versioned JSON document (`schema_version: 1`) to stdout.
+When `--json-out` is also used, the status message goes to stderr, so stdout remains
+safe to pipe into `jq` or another JSON consumer. Parent directories for the report are
+created automatically.
+
+```bash
+losslint check runs/ --format json --json-out artifacts/losslint/report.json > report.json
+losslint check runs/ --format github      # GitHub Actions annotations
+losslint check runs/ --format markdown    # GitHub Job Summary-compatible table
+```
+
 ## In CI
 
-```yaml
-- run: pip install losslint && losslint check runs/ --fail-severity error
-```
-
-Or use the bundled action:
+Use the bundled Action for GitHub annotations, a job-summary table, and a JSON report.
+It installs the exact source revision selected by `uses`, including TensorBoard support:
 
 ```yaml
-- uses: Lsyyh/losslint@v0.4
+- uses: Lsyyh/losslint@main # beta channel; pin a release tag or commit SHA in production
   with:
     files: runs/
+    fail-severity: error
+    report-path: artifacts/losslint.json
 ```
+
+The Action exposes `report-path` as an output. Upload that file as an artifact if it
+needs to be retained after the workflow completes.
+
+For local CI, run `losslint check runs/ --fail-severity error` after installing the
+package. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development checks and
+[ROADMAP.md](ROADMAP.md) for planned work.
 
 ## License
 

@@ -1,0 +1,18 @@
+name: Bug report
+description: Report a reproducible parsing, check, or output problem.
+labels: [bug]
+body:
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and result
+      description: Include the exact command, expected result, and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: fixture
+    attributes:
+      label: Sanitized minimal log
+      description: Do not include credentials, private data, or unredacted experiment metadata.
+    validations:
+      required: true

@@ -9,25 +9,38 @@ branding:
 
 inputs:
   files:
-    description: "Log files or directories to lint (directories are scanned recursively)"
+    description: "Whitespace-separated log files or directories to lint"
     required: true
     default: "runs/"
   fail-severity:
     description: "Exit 1 when a finding is at or above this severity (error/warning/info)"
     required: false
     default: "error"
-  install-source:
-    description: "How to install losslint: a pip requirement spec (e.g. 'losslint' or a git+https URL)"
+  report-path:
+    description: "Path for the JSON report (relative to the workspace)"
     required: false
-    default: "losslint"
+    default: "losslint-report.json"
+
+outputs:
+  report-path:
+    description: "Path to the generated JSON report"
+    value: ${{ steps.lint.outputs.report-path }}
 
 runs:
   using: "composite"
   steps:
-    - name: Install losslint
+    - name: Install losslint from this action revision
       shell: bash
-      run: pip install "${{ inputs.install-source }}"
+      run: python -m pip install "${GITHUB_ACTION_PATH}[tb]"
     - name: Lint training logs
+      id: lint
       shell: bash
       run: |
-        losslint check "${{ inputs.files }}" --fail-severity "${{ inputs.fail-severity }}"
+        read -r -a files <<< "${{ inputs.files }}"
+        set +e
+        losslint check "${files[@]}" --fail-severity "${{ inputs.fail-severity }}" \
+          --format github --json-out "${{ inputs.report-path }}"
+        result=$?
+        losslint check "${files[@]}" --format markdown >> "$GITHUB_STEP_SUMMARY"
+        echo "report-path=${{ inputs.report-path }}" >> "$GITHUB_OUTPUT"
+        exit "$result"

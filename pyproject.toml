@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "losslint"
-version = "0.4.1"
+dynamic = ["version"]
 description = "Lint your training logs after the run: NaN, divergence, loss spikes, overfitting onset and step bugs in trainer_state.json / CSV / JSONL / TensorBoard event files, with CI-friendly exit codes."
 readme = "README.md"
 license = "MIT"
@@ -54,6 +54,9 @@ Documentation = "https://github.com/Lsyyh/losslint#readme"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "losslint.__version__"}
 
 [tool.ruff]
 line-length = 100
