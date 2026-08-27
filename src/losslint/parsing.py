@@ -60,7 +60,7 @@ def _to_float(value: Any) -> float | None:
 
 
 def _is_usable_number(value: float | None) -> bool:
-    return value is not None and not math.isnan(value)
+    return value is not None and math.isfinite(value)
 
 
 TFRECORD_MAX_FIRST_RECORD = 4096
@@ -134,8 +134,8 @@ def _series_from_records(
     issues: list[str] = []
     kept: list[dict[str, Any]] = []
     for line_no, record in enumerate(records, start=1):
-        if "step" in record and _to_float(record["step"]) is None:
-            issues.append(f"line {line_no}: unparseable step value {record['step']!r}")
+        if "step" in record and not _is_usable_number(_to_float(record["step"])):
+            issues.append(f"line {line_no}: invalid step value {record['step']!r}")
             continue
         kept.append(record)
 
@@ -144,15 +144,29 @@ def _series_from_records(
 
     step_key: str | None = None
     if step_key_candidates is not None:
+        normalized = {name.lower(): name for name in kept[0]}
         for candidate in step_key_candidates:
-            if candidate in kept[0]:
-                step_key = candidate
+            if candidate in normalized:
+                step_key = normalized[candidate]
                 break
+
+    if step_key is not None:
+        valid: list[dict[str, Any]] = []
+        for line_no, record in enumerate(kept, start=1):
+            if not _is_usable_number(_to_float(record.get(step_key))):
+                issues.append(f"line {line_no}: invalid step value {record.get(step_key)!r}")
+                continue
+            valid.append(record)
+        kept = valid
+        if not kept:
+            raise ValueError(f"no usable rows in {source}")
 
     steps: list[int] = []
     for index, record in enumerate(kept):
-        if step_key is not None and _is_usable_number(_to_float(record.get(step_key))):
-            steps.append(int(_to_float(record[step_key])))
+        if step_key is not None:
+            step = _to_float(record[step_key])
+            assert step is not None
+            steps.append(int(step))
         else:
             steps.append(index)
 
@@ -271,9 +285,10 @@ def _resolve_columns(
         exclude_hints: bool = False,
         require_hint: bool = False,
     ) -> str | None:
+        normalized = {name.lower(): name for name in header}
         for candidate in candidates:
-            if candidate in header:
-                return candidate
+            if candidate in normalized:
+                return normalized[candidate]
         if contains is not None:
             for name in header:
                 lowered = name.lower()
@@ -316,9 +331,10 @@ def _load_csv(path: Path, overrides: ColumnOverrides) -> RunLog:
         if step_idx is not None:
             raw = row[step_idx] if step_idx < len(row) else None
             step_value = _to_float(raw)
-            if step_value is None:
-                issues.append(f"row {row_no}: unparseable step value {raw!r}")
+            if not _is_usable_number(step_value):
+                issues.append(f"row {row_no}: invalid step value {raw!r}")
                 continue
+            assert step_value is not None
             steps.append(int(step_value))
         else:
             steps.append(len(steps))

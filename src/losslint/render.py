@@ -154,6 +154,50 @@ def _finding_line(finding: Finding, palette: _Palette) -> str:
     return f"  {color(f'{finding.severity:<8}')} {finding.check:<14} {finding.message}"
 
 
+def _github_escape(value: str) -> str:
+    """Escape a value for a GitHub Actions workflow command property/message."""
+    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def render_github(reports: list[RunReport]) -> str:
+    """Render findings as GitHub Actions annotations.
+
+    Output is deliberately limited to workflow commands so it can be emitted
+    directly by a CI step without contaminating a JSON report.
+    """
+    lines: list[str] = []
+    for report in reports:
+        for finding in report.findings:
+            level = {"error": "error", "warning": "warning", "info": "notice"}[finding.severity]
+            source = _github_escape(str(finding.source or report.run.source))
+            title = _github_escape(f"losslint {finding.check}")
+            message = _github_escape(finding.message)
+            lines.append(f"::{level} file={source},title={title}::{message}")
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
+def _markdown_escape(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", "<br>")
+
+
+def render_markdown(reports: list[RunReport]) -> str:
+    """Render a compact Markdown report suitable for a GitHub job summary."""
+    findings = [finding for report in reports for finding in report.findings]
+    counts = {name: sum(1 for item in findings if item.severity == name) for name in SEVERITIES}
+    summary = ", ".join(f"{counts[name]} {name}" for name in SEVERITIES if counts[name])
+    lines = ["## losslint report", "", f"{len(reports)} run(s); {summary or 'clean'}.", ""]
+    if not findings:
+        return "\n".join(lines)
+    lines.extend(["| Severity | Check | Source | Message |", "| --- | --- | --- | --- |"])
+    for finding in findings:
+        source = finding.source or "unknown"
+        lines.append(
+            f"| {_markdown_escape(finding.severity)} | {_markdown_escape(finding.check)} | "
+            f"`{_markdown_escape(str(source))}` | {_markdown_escape(finding.message)} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def render_report(
     reports: list[RunReport],
     *,

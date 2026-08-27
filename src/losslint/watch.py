@@ -118,16 +118,19 @@ class _JsonlTail:
                 if candidate in record:
                     self._step_key = candidate
                     break
-        if "step" in record and _to_float(record["step"]) is None:
-            self._issues.append(f"line {self._line_no}: unparseable step value {record['step']!r}")
+        step_value = _to_float(record.get(self._step_key)) if self._step_key else None
+        if self._step_key is not None and not _is_usable_number(step_value):
+            self._issues.append(
+                f"line {self._line_no}: invalid step value {record.get(self._step_key)!r}"
+            )
             return
         for key, raw in record.items():
             if key == self._step_key or not isinstance(raw, bool | int | float | str):
                 continue
             if key not in self._series:
                 self._series[key] = [None] * len(self._steps)
-        step_value = _to_float(record.get(self._step_key)) if self._step_key else None
-        if self._step_key is not None and _is_usable_number(step_value):
+        if self._step_key is not None:
+            assert step_value is not None
             self._steps.append(int(step_value))
         else:
             self._steps.append(len(self._steps))
@@ -186,7 +189,12 @@ class _CsvTail:
             if self._step_idx is not None:
                 raw_step = cells[self._step_idx] if self._step_idx < len(cells) else None
                 step_value = _to_float(raw_step)
-                self._steps.append(int(step_value) if step_value is not None else len(self._steps))
+                if _is_usable_number(step_value):
+                    assert step_value is not None
+                    self._steps.append(int(step_value))
+                else:
+                    self._issues.append(f"invalid step value {raw_step!r}")
+                    continue
             else:
                 self._steps.append(len(self._steps))
             for idx, values in self._columns:

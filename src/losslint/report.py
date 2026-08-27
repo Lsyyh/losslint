@@ -48,6 +48,7 @@ def render_json(reports: list[RunReport], exit_code: int) -> str:
 
     findings = [f for report in reports for f in report.findings]
     payload = {
+        "schema_version": 1,
         "losslint_version": __version__,
         "runs": [
             {

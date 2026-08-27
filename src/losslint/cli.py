@@ -11,7 +11,7 @@ from losslint import __version__
 from losslint.checks import CheckOptions, run_all_checks
 from losslint.demo import write_demo_logs
 from losslint.parsing import ColumnOverrides, load_run
-from losslint.render import render_report
+from losslint.render import render_github, render_markdown, render_report
 from losslint.report import SEVERITIES, RunReport, exit_code, render_json
 from losslint.watch import WatchOptions, run_watch
 
@@ -45,8 +45,8 @@ def _expand_inputs(raw_inputs: list[str]) -> list[Path]:
                 )
         else:
             files.append(path)
-    # De-duplicate while preserving order (rglob patterns can overlap).
-    return list(dict.fromkeys(files))
+    # De-duplicate and sort so directory scans have stable report ordering.
+    return sorted(dict.fromkeys(files), key=lambda path: str(path))
 
 
 def _under_hidden_dir(root: Path, candidate: Path) -> bool:
@@ -108,7 +108,10 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_check_thresholds(p_check)
     _add_column_overrides(p_check)
     p_check.add_argument(
-        "--format", choices=("text", "json"), default="text", help="report format (default: text)"
+        "--format",
+        choices=("text", "json", "github", "markdown"),
+        default="text",
+        help="report format (default: text)",
     )
     p_check.add_argument(
         "--color",
@@ -258,6 +261,10 @@ def main(argv: list[str] | None = None) -> int:
     json_text = render_json(reports, code)
     if args.format == "json":
         print(json_text, end="")
+    elif args.format == "github":
+        print(render_github(reports), end="")
+    elif args.format == "markdown":
+        print(render_markdown(reports), end="")
     else:
         print(
             render_report(
@@ -270,8 +277,9 @@ def main(argv: list[str] | None = None) -> int:
             end="",
         )
     if args.json_out:
+        args.json_out.parent.mkdir(parents=True, exist_ok=True)
         args.json_out.write_text(json_text, encoding="utf-8")
-        print(f"wrote JSON report to {args.json_out}")
+        print(f"wrote JSON report to {args.json_out}", file=sys.stderr)
     return code
 
 
